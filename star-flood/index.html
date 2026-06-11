@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StarFlood — Anime Community Space</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Helvetica, sans-serif;
+        }
+
+        body {
+            background-color: #08090d;
+            color: #a3a5b3;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 25%, rgba(56, 189, 248, 0.05) 0%, transparent 35%),
+                radial-gradient(circle at 85% 75%, rgba(168, 85, 247, 0.05) 0%, transparent 45%);
+            background-attachment: fixed;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        #starfall {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            background: rgba(8, 9, 13, 0.35);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-wrap {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: #ffffff;
+            text-transform: uppercase;
+            background: linear-gradient(45deg, #38bdf8, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        nav {
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: #717380;
+            background: none;
+            border: none;
+            font-size: 13px;
+            font-weight: 600;
+            margin-left: 32px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: color 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            cursor: pointer;
+            padding: 6px 0;
+            position: relative;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: #38bdf8;
+            text-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+        }
+
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            height: 2px;
+            background: #38bdf8;
+            box-shadow: 0 0 10px #38bdf8;
+        }
+
+        main {
+            flex: 1;
+            padding: 60px 0;
+        }
+
+        .tab-content {
+            display: none;
+            opacity: 0;
+            transform: translateY(15px);
+            transition: opacity 0.7s cubic-bezier(0.25, 1, 0.5, 1), transform 0.7s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .tab-content.active-block { display: block; opacity: 1; transform: translateY(0); }
+        .tab-content.active-grid { display: grid; opacity: 1; transform: translateY(0); }
+
+        /* Вкладка Герои/Участники */
+        .participant-grid {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .p-card {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            padding: 40px 30px;
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .p-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.5s ease;
+        }
+
+        .p-card:hover {
+            transform: translateY(-8px);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Уникальные свечения для ролей */
+        .p-owner:hover { border-color: rgba(255, 215, 0, 0.3); box-shadow: 0 15px 40px rgba(255, 215, 0, 0.1); }
+        .p-owner::before { background: linear-gradient(90deg, transparent, #ffd700, transparent); }
+
+        .p-coowner:hover { border-color: rgba(56, 189, 248, 0.3); box-shadow: 0 15px 40px rgba(56, 189, 248, 0.1); }
+        .p-coowner::before { background: linear-gradient(90deg, transparent, #38bdf8, transparent); }
+
+        .p-admin:hover { border-color: rgba(239, 68, 68, 0.3); box-shadow: 0 15px 40px rgba(239, 68, 68, 0.1); }
+        .p-admin::before { background: linear-gradient(90deg, transparent, #ef4444, transparent); }
+
+        .p-role {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #585a66;
+            margin-bottom: 12px;
+        }
+
+        .p-name {
+            font-size: 22px;
+            font-weight: 900;
+            color: #ffffff;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .p-desc {
+            font-size: 13px;
+            color: #717380;
+            line-height: 1.5;
+        }
+
+        /* Остальные стили из прошлой версии */
+        .hero { text-align: center; padding: 40px 0; }
+        .hero-title { font-size: 52px; font-weight: 900; color: #ffffff; line-height: 1.1; margin-bottom: 24px; text-transform: uppercase; }
+        .hero-title span { display: block; background: linear-gradient(90deg, #ffffff, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero-subtitle { font-size: 17px; color: #717380; max-width: 650px; margin: 0 auto 48px auto; line-height: 1.6; }
+        .btn-link { display: inline-block; padding: 16px 42px; font-size: 14px; font-weight: 700; color: #ffffff; background: linear-gradient(90deg, #5b21b6, #7c3aed); text-decoration: none; border-radius: 6px; text-transform: uppercase; transition: all 0.3s ease; box-shadow: 0 4px 20px rgba(124, 58, 237, 0.15); }
+        .btn-link:hover { transform: translateY(-2px); box-shadow: 0 0 30px rgba(124, 58, 237, 0.4); }
+        .page-title { font-size: 24px; color: #ffffff; font-weight: 800; text-transform: uppercase; margin-bottom: 40px; position: relative; display: inline-block; }
+        .page-title::after { content: ''; position: absolute; left: 0; bottom: -8px; width: 30px; height: 2px; background: #38bdf8; }
+        .about-layout { display: flex; flex-direction: column; gap: 20px; }
+        .about-block { background: rgba(255, 255, 255, 0.01); border: 1px solid rgba(255, 255, 255, 0.02); padding: 35px; border-radius: 8px; }
+        .about-block h3 { color: #ffffff; font-size: 16px; font-weight: 700; text-transform: uppercase; margin-bottom: 14px; }
+        .about-block p { font-size: 14px; line-height: 1.7; color: #717380; }
+        .features { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+        .card { background: rgba(255, 255, 255, 0.01); border: 1px solid rgba(255, 255, 255, 0.03); padding: 30px; border-radius: 8px; transition: all 0.4s ease; }
+        .card:hover { transform: translateY(-4px); background: rgba(255, 255, 255, 0.02); border-color: rgba(168, 85, 247, 0.3); }
+        .card-title { font-size: 15px; color: #ffffff; margin-bottom: 12px; font-weight: 700; text-transform: uppercase; }
+        .card-text { font-size: 13px; line-height: 1.6; color: #717380; }
+        .card-punishment { margin-top: 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #a855f7; border-top: 1px solid rgba(255, 255, 255, 0.02); padding-top: 12px; }
+        .card-punishment.critical { color: #ef4444; }
+        .contact-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+        .contact-link { display: flex; flex-direction: column; padding: 32px; background: rgba(255, 255, 255, 0.01); border: 1px solid rgba(255, 255, 255, 0.03); border-radius: 8px; text-decoration: none; transition: all 0.4s ease; }
+        .contact-link:hover { transform: translateY(-4px); border-color: rgba(56, 189, 248, 0.3); }
+        .contact-label { font-size: 11px; color: #585a66; text-transform: uppercase; margin-bottom: 12px; }
+        .contact-value { font-size: 17px; font-weight: 700; color: #38bdf8; margin-bottom: 8px; }
+        .contact-desc { font-size: 13px; color: #717380; line-height: 1.5; }
+        footer { margin-top: auto; padding: 30px 0; border-top: 1px solid rgba(255, 255, 255, 0.02); text-align: center; position: relative; z-index: 10; }
+        .copyright-text { font-size: 12px; color: #3f414d; letter-spacing: 1px; }
+        .copyright-text span { color: #585a66; font-weight: 600; }
+
+        @media (max-width: 768px) {
+            .hero-title { font-size: 36px; }
+            .header-wrap { flex-direction: column; gap: 16px; padding: 16px 0; }
+            .nav-link { margin: 0 10px; font-size: 11px; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="starfall"></canvas>
+
+    <header>
+        <div class="container header-wrap">
+            <div class="logo" onclick="switchTab('home', 'block')">StarFlood</div>
+            <nav>
+                <button class="nav-link" id="nav-about" onclick="switchTab('about', 'block')">О нас</button>
+                <button class="nav-link" id="nav-rules" onclick="switchTab('rules', 'grid')">Правила</button>
+                <button class="nav-link" id="nav-members" onclick="switchTab('members', 'grid')">Участники</button>
+                <button class="nav-link" id="nav-contact" onclick="switchTab('contact', 'grid')">Связь</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        
+        <div id="home" class="tab-content active-block">
+            <section class="hero">
+                <h1 class="hero-title">Территория флуда <span>StarFlood</span></h1>
+                <p class="hero-subtitle">Пространство, созданное для обсуждения абсолютно любых аниме тайтлов, манги, ранобэ и всеобщего общения.</p>
+                <a href="https://t.me/Doplo_Terak" class="btn-link">Присоединиться к нам</a>
+            </section>
+        </div>
+
+        <div id="about" class="tab-content">
+            <h2 class="page-title">О нас</h2>
+            <div class="about-layout">
+                <div class="about-block">
+                    <h3>Концепция платформы</h3>
+                    <p>StarFlood функционирует как децентрализованная текстовая среда для глубокой интеграции единомышленников. Мы предоставляем абсолютную свободу в обсуждении любых медиа-направлений.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="rules" class="tab-content features">
+            <div class="card">
+                <h3 class="card-title">01. Оскорбления и конфликты</h3>
+                <p class="card-text">Любые формы унижения или токсичности допускаются исключительно в шуточном, дружеском формате. При возникновении реального спора — урегулируйте его спокойно или переносите переписку в личные сообщения.</p>
+                <div class="card-punishment">Наказание: Предупреждение (варн) → Мут на 1 час</div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">02. Контент 18+ и NSFW</h3>
+                <p class="card-text">Обсуждение взрослых тем и использование мата не запрещены, однако прямая публикация порнографических, шокирующих или пугающих медиафайлов (фото, видео, стикеры, гифки) полностью запрещена. Тематические арты разрешено отправлять строго под тегом спойлера без злоупотребления.</p>
+                <div class="card-punishment">Наказание: Предупреждение (варн) → Мут на 2 часа</div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">03. Лимиты на спам</h3>
+                <p class="card-text">Спамом признаётся массовая отправка 5 и более гифок, стикеров или идентичных сообщений подряд. Сюда же относится цикличный вызов одинаковых команд ботов и бессмысленные упоминания участников чата.</p>
+                <div class="card-punishment">Наказание: Предупреждение (варн)</div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">04. Конфиденциальность</h3>
+                <p class="card-text">Уважение к частной жизни является приоритетом. Распространение личной информации, реальных данных или медиаматериалов участников без их явного и осознанного согласия категорически запрещено.</p>
+                <div class="card-punishment critical">Наказание: Строгие санкции администрации</div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">05. Рекламная деятельность</h3>
+                <p class="card-text">Обычное упоминание сторонних проектов или ресурсов в контексте живого диалога не запрещается. Тем не менее, любой намеренный, целенаправленный пиар и реклама сообществ будут пресекаться.</p>
+                <div class="card-punishment">Наказание: Удаление / Ограничение доступа</div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">06. Контроль актива и чистки</h3>
+                <p class="card-text">
+                    • Недельная норма: минимум 120 сообщений.<br>
+                    • Системная чистка: каждое воскресенье в 19:00.<br>
+                    • Недобор (от 20 до 69 соо): выдача варна.<br>
+                    • Критический недобор (менее 20 соо) или инактив от 5 дней без причины: полная блокировка (для админов — снятие с поста).<br>
+                    • Пользователи в статусе «Рест», новички («Нью») и вышедшие из реста освобождаются от проверок на 4 дня.
+                </p>
+                <div class="card-punishment critical">Наказание: Предупреждение / Полный бан</div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">07. Регламент выхода</h3>
+                <p class="card-text">Если вы принимаете решение покинуть флуд, необходимо отправить сообщение с указанием вашей роли и (по желанию) причины ухода. Также убедительная просьба упомянуть владельца проекта или действующих администраторов.</p>
+                <div class="card-punishment">Статус: Официальное уведомление</div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">08. Возрастной ценз</h3>
+                <p class="card-text">На платформе установлено фиксированное возрастное ограничение. Участники должны быть не моложе 13 лет. В редких случаях возможны индивидуальные исключения по согласованию.</p>
+                <div class="card-punishment">Статус: Обязательный верификатор</div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">09. Расизм и политика</h3>
+                <p class="card-text">Категорически запрещены любые формы ксенофобии, расизма, разжигания межнациональной розни, а также прямое осуждение стран, культур или национальностей. Просьба сохранять максимальное дружелюбие ко всем народам.</p>
+                <div class="card-punishment critical">Наказание: Немедленный бессрочный бан</div>
+            </div>
+
+        </div>
+
+        <div id="members" class="tab-content participant-grid">
+            <div class="p-card p-owner">
+                <div class="p-role">Владелец</div>
+                <div class="p-name">Теракомари</div>
+                <div class="p-desc">Основатель StarFlood.</div>
+            </div>
+
+            <div class="p-card p-coowner">
+                <div class="p-role">Совладелец</div>
+                <div class="p-name">Миямура</div>
+                <div class="p-desc">Со-основатель. Ответственный за инфраструктуру и порядок.</div>
+            </div>
+
+            <div class="p-card p-admin">
+                <div class="p-role">Старший админ</div>
+                <div class="p-name">Авель</div>
+                <div class="p-desc">Главный админ. Регулирует соблюдение правил и активности чата.</div>
+            </div>
+        </div>
+
+        <div id="contact" class="tab-content contact-grid">
+            <a href="https://t.me/Doplo_Terak" class="contact-link">
+                <span class="contact-label">Информационный канал</span>
+                <span class="contact-value">Telegram Канал</span>
+                <span class="contact-desc">Телеграм канал с дополнительной информацией</span>
+            </a>
+            <a href="https://t.me/Nirey_Kall" class="contact-link">
+                <span class="contact-label">Владелец</span>
+                <span class="contact-value">Теракомари</span>
+                <span class="contact-desc">Владелец проекта</span>
+            </a>
+            <a href="https://t.me/Mitsukii_sempai" class="contact-link">
+                <span class="contact-label">Со-снователь</span>
+                <span class="contact-value">Миямура</span>
+                <span class="contact-desc">Управление администрацией, флудом, сайтом</span>
+            </a>
+        </div>
+
+    </main>
+
+    <footer>
+        <div class="copyright-text">
+            © 2026 StarFlood Space. Все права защищены. Создатели флуда: <span>Miyamura × Terakomari × Abel</span>
+        </div>
+    </footer>
+
+    <script>
+        function switchTab(targetId, displayMode) {
+            const allTabs = document.querySelectorAll('.tab-content');
+            allTabs.forEach(tab => {
+                tab.classList.remove('active-block', 'active-grid');
+                tab.style.display = 'none';
+            });
+            const allLinks = document.querySelectorAll('.nav-link');
+            allLinks.forEach(link => link.classList.remove('active'));
+            const targetTab = document.getElementById(targetId);
+            if (displayMode === 'grid') {
+                targetTab.style.display = 'grid';
+                setTimeout(() => targetTab.classList.add('active-grid'), 20);
+            } else {
+                targetTab.style.display = 'block';
+                setTimeout(() => targetTab.classList.add('active-block'), 20);
+            }
+            const activeNavButton = document.getElementById('nav-' + (targetId === 'members' ? 'members' : targetId));
+            if (activeNavButton) activeNavButton.classList.add('active');
+        }
+
+        const canvas = document.getElementById('starfall');
+        const ctx = canvas.getContext('2d');
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+        window.addEventListener('resize', () => { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; });
+
+        class Meteor {
+            constructor() { this.active = false; }
+            spawn() {
+                this.x = Math.random() * (width * 0.8) + (width * 0.2);
+                this.y = Math.random() * -50;
+                this.speed = Math.random() * 20 + 35;    
+                this.dx = -this.speed * 0.85;
+                this.dy = this.speed * 0.52;
+                this.alpha = 1.0; 
+                this.active = true;
+            }
+            update() {
+                if (!this.active) return;
+                this.x += this.dx; this.y += this.dy;
+                this.alpha -= 0.028; 
+                if (this.y > height || this.x < -200 || this.alpha <= 0) this.active = false;
+            }
+            draw() {
+                if (!this.active) return;
+                let grad = ctx.createLinearGradient(this.x, this.y, this.x - this.dx * 0.5, this.y - this.dy * 0.5);
+                grad.addColorStop(0, `rgba(56, 189, 248, ${this.alpha})`);      
+                grad.addColorStop(0.3, `rgba(168, 85, 247, ${this.alpha * 0.4})`); 
+                grad.addColorStop(1, 'rgba(168, 85, 247, 0)');                 
+                ctx.strokeStyle = grad; ctx.lineWidth = 2.0; ctx.beginPath(); ctx.moveTo(this.x, this.y); ctx.lineTo(this.x - this.dx * 0.5, this.y - this.dy * 0.5); ctx.stroke();
+            }
+        }
+        const meteorPool = [new Meteor(), new Meteor()];
+        function animationLoop() {
+            ctx.clearRect(0, 0, width, height);
+            meteorPool.forEach(meteor => {
+                if (meteor.active) { meteor.update(); meteor.draw(); }
+                else if (Math.random() < 0.003) meteor.spawn();
+            });
+            requestAnimationFrame(animationLoop);
+        }
+        animationLoop();
+    </script>
+</body>
+</html>
